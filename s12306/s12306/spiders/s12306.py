@@ -6,15 +6,16 @@ from scrapy.http import Request
 
 class s12306Spider(scrapy.Spider):
 
-
 	name = 's12306'
-
 	allowed_domains = ['12306.cn/','kyfw.12306.cn']
 
-	start_urls = ['https://kyfw.12306.cn/otn/leftTicket/query?leftTicketDTO.train_date=2019-05-01&leftTicketDTO.from_station=CDW&leftTicketDTO.to_station=GYW&purpose_codes=ADULT']
-	# resp = Request(start_urls[0])
+	selected_stations = ['GYW','JFW','MYW','DYW']
+	start_urls = []
+	for station in selected_stations:
+		urls = 'https://kyfw.12306.cn/otn/leftTicket/query?leftTicketDTO.train_date=2019-05-01&leftTicketDTO.from_station=CDW&leftTicketDTO.to_station=' + station + '&purpose_codes=ADULT'
+		start_urls.append(urls)
+	start_urls.append('https://kyfw.12306.cn/otn/leftTicket/query?leftTicketDTO.train_date=2019-05-01&leftTicketDTO.from_station=JFW&leftTicketDTO.to_station=GYW&purpose_codes=ADULT')
 
-	# print(resp.body)
 	def parse(self,response):
 
 		train_list = json.loads(response.body)['data']['result']
@@ -33,9 +34,9 @@ class s12306Spider(scrapy.Spider):
 				url = 'https://kyfw.12306.cn/otn/czxx/queryByTrainNo?train_no='
 
 				url = url + train_no + '&from_station_telecode=' + from_station_telecode + '&to_station_telecode=' + to_station_telecode + '&depart_date=' + depart_date
-				yield scrapy.Request(url,callback=self.train_info) 
+				yield scrapy.Request(url,callback=lambda response, depart_date = depart_date: self.train_info(response,depart_date)) 
 
-	def train_info(self,response):
+	def train_info(self,response,depart_date):
 
 		item = S12306Item()
 
@@ -47,5 +48,5 @@ class s12306Spider(scrapy.Spider):
 			item['start_time'] = train_info['start_time']
 			item['station_name'] = train_info['station_name']
 			item['station_no'] = train_info['station_no']
+			item['depart_date'] = depart_date
 			yield item
-		# print(train_info_list)

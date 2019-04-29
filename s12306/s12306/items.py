@@ -21,3 +21,4 @@ class S12306Item(scrapy.Item):
 
     station_no = scrapy.Field()
     
+    depart_date = scrapy.Field()
